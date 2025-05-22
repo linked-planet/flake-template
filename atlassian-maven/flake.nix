@@ -71,8 +71,8 @@
           ];
 
           installPhase = ''
-            mkdir -p $out/share
-            cp "target/${pname}-${version}.jar" $out/share
+            mkdir -p $out/
+            cp "target" $out/share
           '';
         });
       });
