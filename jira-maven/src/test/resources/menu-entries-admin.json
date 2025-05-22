@@ -1,0 +1,99 @@
+[
+  {
+    "title": "Root 1",
+    "link": "/root",
+    "target": "_self",
+    "children": []
+  },
+  {
+    "title": "Root 2",
+    "link": "/root",
+    "target": "_self",
+    "permissions": {
+      "jiraDashboardId": "10100"
+    },
+    "children": []
+  },
+  {
+    "title": "Root 3",
+    "link": "/root",
+    "target": "_self",
+    "permissions": {
+      "jiraPortalId": "2"
+    },
+    "children": []
+  },
+  {
+    "title": "Root 4",
+    "link": "/root",
+    "target": "_self",
+    "permissions": {
+      "jiraProjectKey": "HID"
+    },
+    "children": []
+  },
+  {
+    "title": "Root 5",
+    "link": "/root",
+    "target": "_self",
+    "permissions": {
+      "assetSchemaId": "1"
+    },
+    "children": []
+  },
+  {
+    "title": "Root 6",
+    "link": "/root",
+    "target": "_self",
+    "permissions": {
+      "jiraGroupName": "jira-administrators"
+    },
+    "children": []
+  },
+  {
+    "title": "Sub 1",
+    "target": "_self",
+    "children": [
+      {
+        "title": "Sub 1/1",
+        "link": "/sub/1/1",
+        "target": "_self"
+      },
+      {
+        "title": "Sub 1/2",
+        "link": "https://bla.blub",
+        "target": "_self",
+        "permissions": {
+          "jiraProjectKey": "VIS"
+        }
+      },
+      {
+        "title": "Sub 1/3",
+        "link": "/",
+        "target": "_self",
+        "permissions": {
+          "jiraDashboardId": "10100"
+        }
+      }
+    ]
+  },
+  {
+    "title": "Sub 2",
+    "target": "_self",
+    "permissions": {
+      "jiraDashboardId": "10100"
+    },
+    "children": [
+      {
+        "title": "Sub 2/1",
+        "link": "/",
+        "target": "_self"
+      },
+      {
+        "title": "Sub 2/2",
+        "link": "/",
+        "target": "_self"
+      }
+    ]
+  }
+]

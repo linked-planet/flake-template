@@ -1,0 +1,92 @@
+<!--
+  #%L
+  jmenu
+  %%
+  Copyright (C) 2025 linked-planet GmbH
+  %%
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+  
+       http://www.apache.org/licenses/LICENSE-2.0
+  
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+  #L%
+  -->
+<atlassian-plugin key="${atlassian.plugin.key}" name="${project.name}" plugins-version="2">
+    <plugin-info>
+        <description>${project.description}</description>
+        <version>${project.version}</version>
+        <vendor name="${project.organization.name}" url="${project.organization.url}"/>
+        <param name="plugin-icon">images/linked-planet-plugin-logo.png</param>
+    </plugin-info>
+
+    <resource type="i18n" name="i18n" location="i18n/plugin"/>
+
+    <!-- ##################################################### -->
+    <!-- WEB RESOURCES -->
+    <!-- ##################################################### -->
+    <web-resource key="jmenu">
+        <dependency>com.atlassian.auiplugin:ajs</dependency>
+        <resource type="download"
+                  location="js/jmenu.js"
+                  name="jmenu.js"/>
+        <context>servicedesk.portal</context>
+        <context>customerportal</context>
+        <context>atl.general</context>
+    </web-resource>
+
+    <resource type="download" name="files/" location="/files"/>
+    <resource type="download" name="js/" location="/js"/>
+
+    <!-- ##################################################### -->
+    <!-- TOP LEVEL APP MENU -->
+    <!-- ##################################################### -->
+    <web-item-provider key="jmenu.menu-item"
+                       class="com.linkedplanet.jmenu.impl.MenuWebItemProvider"
+                       section="system.top.navigation.bar">
+    </web-item-provider>
+
+    <web-section key="jmenu.menu-section" location="jmenu.menu-item"/>
+
+    <!-- ##################################################### -->
+    <!-- PLUGIN ADMIN -->
+    <!-- ##################################################### -->
+    <web-section key="jmenu.admin-section"
+                 location="admin_plugins_menu" weight="1000">
+        <label key="jmenu.admin-section.label"/>
+    </web-section>
+
+    <web-item key="jmenu.admin-item"
+              section="admin_plugins_menu/jmenu.admin-section">
+        <label key="jmenu.config-item.label"/>
+        <link>/secure/MenuPluginConfigAction!default.jspa</link>
+    </web-item>
+
+    <webwork1 key="jmenu.config-action">
+        <actions>
+            <action name="com.linkedplanet.jmenu.impl.config.MenuPluginConfigAction"
+                    alias="MenuPluginConfigAction"
+                    roles-required="ADMINISTER">
+                <view name="default">templates/plugin-config.vm</view>
+                <view name="input">templates/plugin-config.vm</view>
+                <view name="success">templates/plugin-config.vm</view>
+            </action>
+        </actions>
+    </webwork1>
+
+    <!-- ##################################################### -->
+    <!-- REST -->
+    <!-- ##################################################### -->
+    <rest key="jmenu.rest" path="/jmenu"
+          version="1.0">
+        <description key="jmenu.rest.description">
+            Provides REST endpoints for jmenu
+        </description>
+    </rest>
+
+</atlassian-plugin>

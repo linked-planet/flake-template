@@ -1,0 +1,38 @@
+# Example services menu configuration in YAML
+- title: Home
+  # Declares this element as a link
+  link: /
+  # Defines the Link Target (see https://www.w3schools.com/tags/att_a_target.asp; default: "_self")
+  target: _blank
+  # Permissions allow to hide certain menu entries if a user is missing them
+  permissions:
+    # Shows entry only if user has access to this Jira Project
+    jiraProjectKey: STOER
+    # Shows entry only if user has access to this Jira Dashboard
+    jiraDashboardId: 10100
+    # Shows entry only if user has access to this Jira Portal
+    jiraPortalId: 1
+    # Shows entry only if user is member of this Group
+    jiraGroupName: jira-administrators
+    # Shows entry only if user has access to this Asset Schema
+    assetSchemaId: 1
+- title: Netz Anfragen
+  # Declares this element as a subsection with the specified link entries
+  children:
+    - title: Stoermeldung
+      link: /stoermeldung
+    - title: Stationszutritt
+      link: https://www.bayernets.de/en/gas-transmission/shippers/network-access-requirements
+- title: Netz Verwaltung
+  # Hides this complete subsection if specified permissions are missing
+  permissions:
+    jiraDashboardId: 10100
+  children:
+    - title: Netz Assets
+      link: https://www.bayernets.de/en/gas-transmission/shippers/network-access-requirements
+    - title: STM Bearbeitung
+      link: /stm-bearbeitung
+    - title: Rufbereitschaftsplanung
+      link: /rufbereitschaftsplanung
+      permissions:
+        jiraPortalId: 1

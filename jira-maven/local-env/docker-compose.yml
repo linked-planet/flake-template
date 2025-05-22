@@ -1,0 +1,57 @@
+# syntax=docker/dockerfile:1
+
+name: jmenu
+
+version: "3.9"
+services:
+  jira:
+    depends_on: [postgres]
+    build:
+      args:
+        JIRA_VERSION: ${JIRA_VERSION}
+        FRONTEND_DEV_MODE: ${FRONTEND_DEV_MODE-false}
+      dockerfile: ./jira.Dockerfile
+      context: ./
+    restart: always
+    environment:
+      VERBOSE_LOGS: true
+      ATL_JDBC_URL: jdbc:postgresql://postgres:5432/confdb
+      ATL_JDBC_USER: confdb
+      ATL_JDBC_PASSWORD: confdb
+      ATL_DB_TYPE: postgres72
+      ATL_DB_DRIVER: org.postgresql.Driver
+      ATL_DB_SCHEMA_NAME: public
+      SET_PERMISSIONS: false
+      JVM_MINIMUM_MEMORY: 1024m
+      JVM_MAXIMUM_MEMORY: 2048m
+    ports:
+      - "8080:8080"
+      - "8091:8091"
+      - "5005:5005"
+    volumes:
+      - "./jira-home:/var/atlassian/application-data/jira"
+    healthcheck:
+      test: ["CMD-SHELL", "curl --silent --max-time 2 http://localhost:8080/status | grep '\"state\":\"RUNNING\"' || exit 1"]
+      interval: 10s
+      retries: 12
+      start_period: 30s
+      timeout: 5s
+
+  postgres:
+    image: postgres:14.8
+    command:
+      ["postgres", "-c", "log_statement=all", "-c", "max_connections=200"]
+    environment:
+      POSTGRES_DB: confdb
+      POSTGRES_USER: confdb
+      POSTGRES_PASSWORD: confdb
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --lc-collate=C --lc-ctype=C"
+    ports:
+      - "5432:5432"
+    volumes:
+      - "./postgres-home:/var/lib/postgresql/data"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready"]
+      interval: 10s
+      timeout: 5s
+      retries: 5

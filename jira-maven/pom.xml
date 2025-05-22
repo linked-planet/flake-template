@@ -1,0 +1,461 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.linked-planet</groupId>
+  <artifactId>jmenu</artifactId>
+  <version>1.0.2-SNAPSHOT</version>
+
+  <organization>
+    <name>linked-planet GmbH</name>
+    <url>https://linked-planet.com</url>
+  </organization>
+
+  <name>jmenu</name>
+  <description>Configurable Header Menu for Jira</description>
+  <packaging>atlassian-plugin</packaging>
+
+  <inceptionYear>2025</inceptionYear>
+
+  <properties>
+    <atlassian.plugin.key>${project.groupId}.${project.artifactId}</atlassian.plugin.key>
+    <projectFullVersion>${project.version}-${env.BUILD_VERSION}</projectFullVersion>
+    <developer.connection>scm:git:https://github.com/linked-planet/jmenu.git</developer.connection>
+  </properties>
+
+  <parent>
+    <groupId>com.linked-planet.atlassian</groupId>
+    <artifactId>iapetus</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+  </parent>
+
+  <dependencies>
+
+    <!-- COMMONS -->
+    <dependency>
+      <groupId>javax.transaction</groupId>
+      <artifactId>jta</artifactId>
+      <scope>provided</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>javax.ws.rs</groupId>
+      <artifactId>jsr311-api</artifactId>
+      <scope>provided</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>javax.inject</groupId>
+      <artifactId>javax.inject</artifactId>
+      <scope>provided</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>jakarta.annotation</groupId>
+      <artifactId>jakarta.annotation-api</artifactId>
+      <scope>provided</scope>
+    </dependency>
+
+    <!-- ATLASSIAN -->
+    <dependency>
+      <groupId>com.atlassian.jira</groupId>
+      <artifactId>jira-api</artifactId>
+      <scope>provided</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>com.atlassian.jira</groupId>
+      <artifactId>jira-core</artifactId>
+      <scope>provided</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>com.atlassian.servicedesk</groupId>
+      <artifactId>jira-servicedesk-api</artifactId>
+      <scope>provided</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>com.atlassian.plugin</groupId>
+      <artifactId>atlassian-spring-scanner-annotation</artifactId>
+      <scope>provided</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>com.google.code.gson</groupId>
+      <artifactId>gson</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>org.jetbrains.kotlin</groupId>
+      <artifactId>kotlin-stdlib</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>org.jetbrains.kotlin</groupId>
+      <artifactId>kotlin-reflect</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>org.jetbrains.kotlinx</groupId>
+      <artifactId>kotlinx-coroutines-core</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>io.arrow-kt</groupId>
+      <artifactId>arrow-core</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>com.linked-planet.client</groupId>
+      <artifactId>kotlin-insight-client-sdk</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>com.fasterxml.jackson.dataformat</groupId>
+      <artifactId>jackson-dataformat-yaml</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>com.fasterxml.jackson.module</groupId>
+      <artifactId>jackson-module-kotlin</artifactId>
+    </dependency>
+
+    <!-- TEST -->
+
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-engine</artifactId>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>io.rest-assured</groupId>
+      <artifactId>rest-assured</artifactId>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>io.mockk</groupId>
+      <artifactId>mockk-jvm</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <testSourceDirectory>src/test/kotlin</testSourceDirectory>
+
+    <plugins>
+      <!-- BUILD HELPER -->
+      <!-- make plugins aware of the src/main/kotlin source folder -->
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>build-helper-maven-plugin</artifactId>
+        <version>3.5.0</version>
+        <executions>
+          <execution>
+            <phase>generate-sources</phase>
+            <goals>
+              <goal>add-source</goal>
+            </goals>
+            <configuration>
+              <sources>
+                <source>src/main/kotlin</source>
+              </sources>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
+      <!-- Clean Maven directories that get corrupted when rebuilding the project with IntelliJ
+                 or on successive Maven builds -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-antrun-plugin</artifactId>
+        <version>3.1.0</version>
+        <executions>
+          <execution>
+            <phase>validate</phase>
+            <goals>
+              <goal>run</goal>
+            </goals>
+            <configuration>
+              <target>
+                <delete failonerror="false">
+                  <fileset dir="${project.build.directory}/dependency-maven-plugin-markers" />
+                  <fileset dir="${project.build.directory}/classes" />
+                </delete>
+              </target>
+            </configuration>
+          </execution>
+          <execution>
+            <id>lol</id>
+            <phase>validate</phase>
+            <goals>
+              <goal>run</goal>
+            </goals>
+            <configuration>
+              <target>
+                <echoproperties />
+              </target>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>org.jetbrains.kotlin</groupId>
+        <artifactId>kotlin-maven-plugin</artifactId>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.13.0</version>
+        <executions>
+          <!-- Replacing default-compile as it is treated specially by maven -->
+          <execution>
+            <id>default-compile</id>
+            <phase>none</phase>
+          </execution>
+          <!-- Replacing default-testCompile as it is treated specially by maven -->
+          <execution>
+            <id>default-testCompile</id>
+            <phase>none</phase>
+          </execution>
+          <execution>
+            <id>java-compile</id>
+            <phase>compile</phase>
+            <goals>
+              <goal>compile</goal>
+            </goals>
+          </execution>
+          <execution>
+            <id>java-test-compile</id>
+            <phase>test-compile</phase>
+            <goals>
+              <goal>testCompile</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-resources-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>prepare-versions-file</id>
+            <goals>
+              <goal>copy-resources</goal>
+            </goals>
+            <phase>compile</phase>
+            <configuration>
+              <outputDirectory>${basedir}/target/classes</outputDirectory>
+              <resources>
+                <resource>
+                  <directory>src/main/resources</directory>
+                  <includes>
+                    <include>version.properties</include>
+                  </includes>
+                  <filtering>true</filtering>
+                </resource>
+              </resources>
+              <overwrite>true</overwrite>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
+      <!-- JIRA -->
+      <plugin>
+        <groupId>com.atlassian.maven.plugins</groupId>
+        <artifactId>jira-maven-plugin</artifactId>
+        <extensions>true</extensions>
+        <!-- TODO: Try to move genrel config to atlas-pom -->
+        <configuration>
+          <extractDependencies>false</extractDependencies>
+          <skipITs>true</skipITs>
+          <skipTests>true</skipTests>
+          <skipRestDocGeneration>true</skipRestDocGeneration>
+          <noWebapp>true</noWebapp>
+          <instructions>
+            <Atlassian-Plugin-Key>${atlassian.plugin.key}</Atlassian-Plugin-Key>
+            <Export-Package>
+              com.linkedplanet.jmenu
+            </Export-Package>
+            <Import-Package>
+              org.springframework.osgi.*;resolution:="optional",
+              org.eclipse.gemini.blueprint.*;resolution:="optional",
+              *;version="0";resolution:=optional
+            </Import-Package>
+            <Spring-Context>*</Spring-Context>
+          </instructions>
+        </configuration>
+      </plugin>
+
+      <!-- SPRING SCANNER -->
+      <plugin>
+        <groupId>com.atlassian.plugin</groupId>
+        <artifactId>atlassian-spring-scanner-maven-plugin</artifactId>
+      </plugin>
+
+      <!-- LICENSE -->
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>license-maven-plugin</artifactId>
+        <version>2.5.0</version>
+        <configuration>
+          <licenseName>apache_v2</licenseName>
+          <licenseFile>${project.basedir}/LICENSE</licenseFile>
+          <projectName>${project.artifactId}</projectName>
+          <inceptionYear>${project.inceptionYear}</inceptionYear>
+          <copyrightOwners>${project.organization.name}</copyrightOwners>
+          <failOnMissingHeader>true</failOnMissingHeader>
+          <failOnNotUptodateHeader>true</failOnNotUptodateHeader>
+          <excludes>
+            <exclude>**/version.properties</exclude>
+            <exclude>**/plugin*.properties</exclude>
+            <exclude>**/log4j.properties</exclude>
+            <exclude>**/kaptKotlin/**/*</exclude>
+            <exclude>**/*-min.js</exclude>
+            <exclude>**/*.json</exclude>
+          </excludes>
+          <excludedScopes>provided,test</excludedScopes>
+        </configuration>
+        <executions>
+          <execution>
+            <id>license-check-file-header</id>
+            <phase>validate</phase>
+            <goals>
+              <goal>check-file-header</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+
+      <!-- RELEASE -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-release-plugin</artifactId>
+        <version>3.1.1</version>
+      </plugin>
+
+      <!-- UPM -->
+      <plugin>
+        <groupId>com.linked-planet.maven</groupId>
+        <artifactId>upm-maven-plugin</artifactId>
+        <version>2.0.1</version>
+        <configuration>
+          <baseUrl>${deploy.url}</baseUrl>
+          <username>${deploy.username}</username>
+          <password>${deploy.password}</password>
+          <pluginKey>${project.groupId}.${project.artifactId}</pluginKey>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+      </plugin>
+    </plugins>
+
+    <pluginManagement>
+
+      <plugins>
+        <plugin>
+          <groupId>com.github.eirslett</groupId>
+          <artifactId>frontend-maven-plugin</artifactId>
+          <configuration>
+            <workingDirectory>${project.basedir}/frontend-ts</workingDirectory>
+            <installDirectory>${project.basedir}/frontend-ts</installDirectory>
+          </configuration>
+        </plugin>
+      </plugins>
+
+      <!--   <plugins> -->
+      <!--     <plugin> -->
+      <!--       <groupId>org.apache.maven.plugins</groupId> -->
+      <!--       <artifactId>maven-resources-plugin</artifactId> -->
+      <!--       <version>3.3.1</version> -->
+      <!--     </plugin> -->
+      <!--     <plugin> -->
+      <!--       <groupId>org.apache.maven.plugins</groupId> -->
+      <!--       <artifactId>maven-install-plugin</artifactId> -->
+      <!--       <version>3.1.4</version> -->
+      <!--     </plugin> -->
+      <!--     <plugin> -->
+      <!--       <groupId>org.apache.maven.plugins</groupId> -->
+      <!--       <artifactId>maven-deploy-plugin</artifactId> -->
+      <!--       <version>3.1.4</version> -->
+      <!--     </plugin> -->
+      <!--   </plugins> -->
+    </pluginManagement>
+  </build>
+
+  <profiles>
+    <!-- plugins we only want to execute on the CI server because they either take too
+             long or cause problems locally -->
+    <profile>
+      <id>itests</id>
+      <activation>
+        <activeByDefault>false</activeByDefault>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>com.atlassian.maven.plugins</groupId>
+            <artifactId>jira-maven-plugin</artifactId>
+            <version>${amps.version}</version>
+            <configuration>
+              <skipITs>false</skipITs>
+              <skipTests>false</skipTests>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+
+    <profile>
+      <id>local</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>com.linked-planet.maven</groupId>
+            <artifactId>upm-maven-plugin</artifactId>
+            <configuration>
+              <pluginFile>
+                ${project.build.directory}/${project.artifactId}-${project.version}.jar
+              </pluginFile>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+
+    <!-- profile which sets the build version -->
+    <profile>
+      <id>set-build-version</id>
+      <activation>
+        <activeByDefault>true</activeByDefault>
+        <property>
+          <name>!env.BUILD_VERSION</name>
+        </property>
+      </activation>
+      <properties>
+        <env.BUILD_VERSION>local</env.BUILD_VERSION>
+      </properties>
+    </profile>
+  </profiles>
+
+  <distributionManagement>
+    <repository>
+      <id>github</id>
+      <name>GitHub Packages</name>
+      <url>https://maven.pkg.github.com/linked-planet/jmenu</url>
+    </repository>
+  </distributionManagement>
+
+</project>

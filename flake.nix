@@ -12,6 +12,11 @@
           path = ./atlassian-maven;
           description = "Flake for use with atlassian-plugin projects";
         };
+      
+        jira-maven = {
+          path = ./jira-maven;
+          description = "Flake and more for use with Jira-plugin projects";
+        };
       };
     };
 }
