@@ -19,19 +19,20 @@
 
       supportedSystems = [ "x86_64-linux" "aarch64-linux" "x86_64-darwin" "aarch64-darwin" ];
 
-      eachSystem = f: nixpkgs.lib.genAttrs supportedSystems (system: let 
-        pkgs = nixpkgs.legacyPackages.${system} // { overlays = [ self.overlays.default ]; };
-      in f pkgs);
-
-      treefmtEval = eachSystem (pkgs: treefmt-nix.lib.evalModule pkgs ./treefmt.nix);
-    in {
-      overlays.default = (final: prev: rec {
+      overlays = (final: prev: rec {
         jdk = prev."jdk${toString javaVersion}";
         maven = prev.maven.override { jdk_headless = jdk; };
         kotlin = prev.kotlin.override { jre = jdk; };
         nodejs = prev."nodejs_${toString nodeVersion}";
         postgresql = prev."postgresql_${toString postgresVersion}";
       });
+
+      eachSystem = f: nixpkgs.lib.genAttrs supportedSystems (system: let 
+        pkgs = nixpkgs.legacyPackages.${system}.extend overlays;
+      in f pkgs);
+
+      treefmtEval = eachSystem (pkgs: treefmt-nix.lib.evalModule pkgs ./treefmt.nix);
+    in {
 
       devShells = eachSystem (pkgs: {
         default = pkgs.mkShell {
