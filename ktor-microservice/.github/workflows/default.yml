@@ -1,0 +1,138 @@
+name: Build & Release
+on:
+  push:
+    tags:
+      - '*'
+    branches:
+      - main
+jobs:
+  build-test-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@v9
+      - name: Setup Nix cache
+        uses: DeterminateSystems/magic-nix-cache-action@v2
+      - name: Extract version from tag
+        id: version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+      - name: Run tests
+        run: nix develop --command ./gradlew test -Pversion=${{ steps.version.outputs.VERSION }}
+      - name: Build project
+        run: nix develop --command ./gradlew build -Pversion=${{ steps.version.outputs.VERSION }}
+      - name: Run linting
+        run: nix flake check
+  docker-build-push:
+    needs: build-test-lint
+    runs-on: ubuntu-latest
+    if: github.ref_type != 'tag'
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@v9
+      - name: Setup Nix cache
+        uses: DeterminateSystems/magic-nix-cache-action@v2
+      - name: Extract version from Gradle
+        id: version
+        run: echo "VERSION=$(grep '^version =' build.gradle.kts | sed 's/.* \([^\s]*\)$/\1/')" >> $GITHUB_OUTPUT
+      - name: Build Docker image
+        run: nix develop --command ./gradlew buildImage
+      - name: Publish Image to local registry
+        run: nix develop --command ./gradlew publishImageToLocalRegistry
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        env:
+          AWS_ACCOUNT: ${{ secrets.AWS_ACCOUNT }}
+        with:
+          role-to-assume: ${{ secrets.AWS_GITHUB_ACTIONS_ROLE }}
+          role-session-name: GitHubActionsSession
+          aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
+      - name: Push to ECR
+        run: |
+          chmod +x pipelines/docker-push.sh
+          nix develop --command ./pipelines/docker-push.sh latest ${{ steps.version.outputs.VERSION }}
+  docker-build-push-release:
+    needs: build-test-lint
+    runs-on: ubuntu-latest
+    if: github.ref_type == 'tag'
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@v9
+      - name: Setup Nix cache
+        uses: DeterminateSystems/magic-nix-cache-action@v2
+      - name: Extract version from tag
+        id: version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+      - name: Build Docker image
+        run: nix develop --command ./gradlew buildImage -Pversion=${{ steps.version.outputs.VERSION }}
+      - name: Publish Image to local registry
+        run: nix develop --command ./gradlew publishImageToLocalRegistry -Pversion=${{ steps.version.outputs.VERSION }}
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        env:
+          AWS_ACCOUNT: ${{ secrets.AWS_ACCOUNT }}
+        with:
+          role-to-assume: ${{ secrets.AWS_GITHUB_ACTIONS_ROLE }}
+          role-session-name: GitHubActionsSession
+          aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
+      - name: Push to ECR
+        run: |
+          chmod +x pipelines/docker-push.sh
+          nix develop --command ./pipelines/docker-push.sh latest ${{ steps.version.outputs.VERSION }}
+  increment-snapshot:
+    needs: docker-build-push-release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: refs/heads/main
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Extract version from tag
+        id: version
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/}
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+          # Extract major, minor, patch from version (assumes semantic versioning)
+          if [[ $VERSION =~ ^v([0-9]+)\.([0-9]+)\.([0-9]+) ]]; then
+            MAJOR=${BASH_REMATCH[1]}
+            MINOR=${BASH_REMATCH[2]}
+            PATCH=${BASH_REMATCH[3]}
+            NEXT_PATCH=$((PATCH + 1))
+            NEXT_SNAPSHOT="$MAJOR.$MINOR.$NEXT_PATCH-SNAPSHOT"
+            echo "NEXT_SNAPSHOT=$NEXT_SNAPSHOT" >> $GITHUB_OUTPUT
+          else
+            echo "Could not parse version from tag: $VERSION"
+            exit 1
+          fi
+      - name: Bump Snapshot-Version number
+        run: |
+          sed -i 's/version = project\.findProperty("version") ?: ".*"/version = project.findProperty("version") ?: "${{ steps.version.outputs.NEXT_SNAPSHOT }}"/' build.gradle.kts
+      - name: Commit and push version bump
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add build.gradle.kts
+          git commit -m "Bump snapshot version to ${{ steps.version.outputs.NEXT_SNAPSHOT }} after release ${{ steps.version.outputs.VERSION }}"
+          git push
+  notify-slack:
+    needs: increment-snapshot
+    runs-on: ubuntu-latest
+    steps:
+      - name: Notify Slack
+        uses: iRoachie/slack-github-actions@v2.3.2
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        with:
+          status: ${{ job.status }}

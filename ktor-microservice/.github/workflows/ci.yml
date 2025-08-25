@@ -1,0 +1,22 @@
+name: CI
+on:
+  push:
+    branches:
+      - '*'
+      - '!main'
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@v9
+      - name: Setup Nix cache
+        uses: DeterminateSystems/magic-nix-cache-action@v2
+      - name: Run tests
+        run: nix develop --command ./gradlew test
+      - name: Build project
+        run: nix develop --command ./gradlew build
+      - name: Run linting
+        run: nix flake check
